@@ -1,2 +1,3 @@
-# Credit-Card-Fraud-Detection
-Dacon - 신용카드 사기 거래 탐지 AI 경진대회
+# MRDC-Challenge
+
+[Microsoft Rice Disease Classification Challenge](https://zindi.africa/competitions/microsoft-rice-disease-classification-challenge)
