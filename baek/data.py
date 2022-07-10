@@ -9,7 +9,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from torch.utils.data import Dataset, DataLoader
 from env import *
-from utils import get_augmentations
+from utils import get_augmentations, get_train_transforms, get_valid_transforms
 
 
 class RiceDataset(Dataset):
@@ -45,7 +45,7 @@ class RiceDataset(Dataset):
 class RiceDataModule(pl.LightningDataModule):
     def __init__(self, fold):
         super().__init__()
-        self.train_aug, self.val_aug = get_augmentations()
+        # self.train_aug, self.val_aug = get_augmentations()
         self.fold = fold
         self.batch_size = BATCH_SIZE
 
@@ -55,9 +55,11 @@ class RiceDataModule(pl.LightningDataModule):
         val_fold = folds.loc[folds["fold"] == self.fold]
 
         self.train_ds = RiceDataset(
-            TRAIN_IMAGE_FOLDER, train_fold, transforms=self.train_aug
+            TRAIN_IMAGE_FOLDER, train_fold, transforms=get_train_transforms()
         )
-        self.val_ds = RiceDataset(TRAIN_IMAGE_FOLDER, val_fold, transforms=self.val_aug)
+        self.val_ds = RiceDataset(
+            TRAIN_IMAGE_FOLDER, val_fold, transforms=get_valid_transforms()
+        )
 
     def train_dataloader(self):
         return DataLoader(self.train_ds, self.batch_size, num_workers=4, shuffle=True)

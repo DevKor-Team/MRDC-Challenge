@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
-    wandb_logger = WandbLogger(project="MRDC", name="Apply_SCE_Big_LR")
+    wandb_logger = WandbLogger(project="MRDC", name="ResNet-DA")
 
     trainer = pl.Trainer(
         logger=wandb_logger,

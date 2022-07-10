@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 from model import RiceClassificationCore, RiceClassificationModule
 from data import RiceDataset
-from utils import get_augmentations
+from utils import get_augmentations, get_valid_transforms
 from env import *
 
 if __name__ == "__main__":
@@ -17,13 +17,18 @@ if __name__ == "__main__":
     )
     model = model.to("cuda")
     _ = model.eval()
-    new_state_dict = torch.load("./checkpoints/model_val_loss=0.22.ckpt")["state_dict"]
+    new_state_dict = torch.load("./checkpoints/model_val_loss=0.49-v3.ckpt")[
+        "state_dict"
+    ]
     model.load_state_dict(new_state_dict)
 
-    _, test_aug = get_augmentations()
+    # _, test_aug = get_augmentations()
     test = pd.read_csv("/ssd/MRDC/test_rgb.csv")
     test_dataset = RiceDataset(
-        TEST_IMAGE_FOLDER, test, train_mode=False, transforms=test_aug
+        TEST_IMAGE_FOLDER,
+        test,
+        train_mode=False,
+        transforms=get_valid_transforms(),
     )
 
     test_dataloader = DataLoader(

@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchmetrics
 import pytorch_lightning as pl
+from torch.nn.modules.loss import _WeightedLoss
 from env import *
 
 
@@ -24,6 +25,43 @@ class SymmetricCrossEntropy(nn.Module):
         elif reduction == "sum":
             rce_loss = rce_loss.sum()
         return self.alpha * ce_loss + self.beta * rce_loss
+
+
+class SmoothCrossEntropyLoss(_WeightedLoss):
+    def __init__(self, weight=None, reduction="mean", smoothing=0.0):
+        super().__init__(weight=weight, reduction=reduction)
+        self.smoothing = smoothing
+        self.weight = weight
+        self.reduction = reduction
+
+    def k_one_hot(self, targets: torch.Tensor, n_classes: int, smoothing=0.0):
+        with torch.no_grad():
+            targets = (
+                torch.empty(size=(targets.size(0), n_classes), device=targets.device)
+                .fill_(smoothing / (n_classes - 1))
+                .scatter_(1, targets.data.unsqueeze(1), 1.0 - smoothing)
+            )
+        return targets
+
+    def reduce_loss(self, loss):
+        return (
+            loss.mean()
+            if self.reduction == "mean"
+            else loss.sum()
+            if self.reduction == "sum"
+            else loss
+        )
+
+    def forward(self, inputs, targets):
+        assert 0 <= self.smoothing < 1
+
+        targets = self.k_one_hot(targets, inputs.size(-1), self.smoothing)
+        log_preds = F.log_softmax(inputs, -1)
+
+        if self.weight is not None:
+            log_preds = log_preds * self.weight.unsqueeze(0)
+
+        return self.reduce_loss(-(targets * log_preds).sum(dim=-1))
 
 
 class RiceClassificationCore(nn.Module):
@@ -61,7 +99,7 @@ class RiceClassificationModule(pl.LightningModule):
         super().__init__()
         self.hparams.update(hparams)
         self.core = core
-        self.criterion = SymmetricCrossEntropy()
+        self.criterion = SmoothCrossEntropyLoss(smoothing=0.1)
         self.accuracy = torchmetrics.Accuracy()
 
     def forward(self, x):
