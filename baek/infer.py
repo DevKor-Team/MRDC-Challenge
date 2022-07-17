@@ -22,7 +22,6 @@ if __name__ == "__main__":
     ]
     model.load_state_dict(new_state_dict)
 
-    # _, test_aug = get_augmentations()
     test = pd.read_csv("/ssd/MRDC/test_rgb.csv")
     test_dataset = RiceDataset(
         TEST_IMAGE_FOLDER,

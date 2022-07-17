@@ -100,6 +100,7 @@ class RiceClassificationModule(pl.LightningModule):
         self.hparams.update(hparams)
         self.core = core
         self.criterion = SmoothCrossEntropyLoss(smoothing=0.1)
+        self.logloss = nn.CrossEntropyLoss()
         self.accuracy = torchmetrics.Accuracy()
 
     def forward(self, x):
@@ -125,10 +126,10 @@ class RiceClassificationModule(pl.LightningModule):
         self.log(
             "train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
         )
-        metric_acc = self.accuracy(out, targets.squeeze().long())
+        log_loss = self.logloss(out, targets.squeeze().long())
         self.log(
-            "train_accuracy",
-            metric_acc,
+            "train_logloss",
+            log_loss,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
@@ -141,14 +142,10 @@ class RiceClassificationModule(pl.LightningModule):
         features = batch["x"]
         targets = batch["y"]
         out = self(features)
-        loss = self.criterion(out, targets.squeeze().long())
+        log_loss = self.logloss(out, targets.squeeze().long())
         self.log(
-            "val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
-        )
-        metric_acc = self.accuracy(out, targets.squeeze().long())
-        self.log(
-            "val_accuracy",
-            metric_acc,
+            "val_logloss",
+            log_loss,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
