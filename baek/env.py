@@ -1,8 +1,8 @@
 IMG_SIZE = 512
 TRAIN_IMAGE_FOLDER = "/ssd/MRDC/Images/train/rgb"
 TEST_IMAGE_FOLDER = "/ssd/MRDC/Images/test"
-BATCH_SIZE = 32
-MODEL_ARCH = "resnext50_32x4d"
+BATCH_SIZE = 16
+MODEL_ARCH = "seresnext50_32x4d"
 CLASSES = 3
 LR = 1e-4
 EARLY_STOPPING = True
