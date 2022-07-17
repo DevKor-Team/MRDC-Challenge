@@ -93,10 +93,15 @@ def get_train_transforms():
             VerticalFlip(p=0.5),
             ShiftScaleRotate(p=0.5),
             HueSaturationValue(
-                hue_shift_limit=0.2, sat_shift_limit=0.2, val_shift_limit=0.2, p=0.5
+                hue_shift_limit=0.2,
+                sat_shift_limit=0.2,
+                val_shift_limit=0.2,
+                p=0.5,
             ),
             RandomBrightnessContrast(
-                brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=0.5
+                brightness_limit=(-0.1, 0.1),
+                contrast_limit=(-0.1, 0.1),
+                p=0.5,
             ),
             Normalize(
                 mean=[0.485, 0.456, 0.406],

@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
+import ttach as tta
 
 from torch.utils.data import DataLoader
 
@@ -17,10 +18,14 @@ if __name__ == "__main__":
     )
     model = model.to("cuda")
     _ = model.eval()
-    new_state_dict = torch.load("./checkpoints/model_val_loss=0.49-v3.ckpt")[
+    new_state_dict = torch.load("./checkpoints/day2/model_val_logloss=0.18.ckpt")[
         "state_dict"
     ]
     model.load_state_dict(new_state_dict)
+
+    # tta_model = tta.ClassificationTTAWrapper(
+    #     model, tta.aliases.five_crop_transform(300, 300)
+    # )
 
     test = pd.read_csv("/ssd/MRDC/test_rgb.csv")
     test_dataset = RiceDataset(
@@ -32,19 +37,19 @@ if __name__ == "__main__":
 
     test_dataloader = DataLoader(
         test_dataset,
-        batch_size=BATCH_SIZE,
+        batch_size=8,
         num_workers=4,
         shuffle=False,
     )
 
     m = nn.Softmax(dim=1)
     result = []
-    for x in test_dataloader:
-        y = model(x["x"].to("cuda"))
-        result.append(m(y).detach().cpu().numpy())
-
+    for image in test_dataloader:
+        # model_output = tta_model(image["x"].to("cuda"))
+        model_output = model(image["x"].to("cuda"))
+        result.append(m(model_output).detach().cpu().numpy())
     y_pred = np.concatenate(result)
-
+    print(y_pred.shape)
     submission = pd.read_csv("/ssd/MRDC/SampleSubmission.csv")
     submission.loc[:, ["blast", "brown", "healthy"]] = y_pred
     submission.to_csv("submission.csv", index=False)

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     )
     callbacks.append(checkpoint_callback)
 
-    early_stopping = EarlyStopping("val_logloss", patience=5, verbose=True, mode="min")
+    early_stopping = EarlyStopping("val_logloss", patience=10, verbose=True, mode="min")
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
