@@ -15,7 +15,7 @@ if __name__ == "__main__":
     callbacks = []
     checkpoint_callback = ModelCheckpoint(
         dirpath="checkpoints/day2/",
-        filename="model_{val_loss:.2f}",
+        filename="model_{val_logloss:.2f}",
         monitor="val_logloss",
         verbose=True,
         save_last=False,

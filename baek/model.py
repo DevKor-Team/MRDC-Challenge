@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchmetrics
 import pytorch_lightning as pl
+
+from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torch.nn.modules.loss import _WeightedLoss
 from env import *
 
@@ -109,8 +111,10 @@ class RiceClassificationModule(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.core.parameters(), lr=self.hparams.lr)
         scheduler = {
-            "scheduler": torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-                optimizer, 15, verbose=False
+            "scheduler": LinearWarmupCosineAnnealingLR(
+                optimizer,
+                warmup_epochs=5,
+                max_epochs=50,
             ),
             "interval": "step",
             "monitor": "train_loss",
