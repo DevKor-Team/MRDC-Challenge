@@ -168,9 +168,10 @@ class RiceClassificationModule(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         # One epoch at a time
-        avg_loss = torch.stack([x["val_logloss"] for x in outputs]).sum() / sum(
-            outputs["cnt"]
-        )
+        # avg_loss = torch.stack([x["val_logloss"] for x in outputs]).sum() / sum(
+        #     outputs["cnt"]
+        # )
+        avg_loss = torch.stack([x["val_logloss"] for x in outputs]).mean()
         self.log(
             "val_logloss",
             avg_loss,
