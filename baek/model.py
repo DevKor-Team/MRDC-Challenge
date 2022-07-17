@@ -104,7 +104,6 @@ class RiceClassificationModule(pl.LightningModule):
         self.core = core
         # self.criterion = SmoothCrossEntropyLoss(smoothing=0.1)
         self.criterion = nn.CrossEntropyLoss()
-        self.logloss = nn.CrossEntropyLoss()
         self.accuracy = torchmetrics.Accuracy()
 
     def forward(self, x):
@@ -121,7 +120,7 @@ class RiceClassificationModule(pl.LightningModule):
                 optimizer,
                 mode="min",
                 factor=0.2,
-                patience=3,
+                patience=5,
                 verbose=True,
                 eps=1e-6,
             ),
@@ -139,15 +138,6 @@ class RiceClassificationModule(pl.LightningModule):
         self.log(
             "train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
         )
-        log_loss = self.logloss(out, targets.squeeze().long())
-        self.log(
-            "train_logloss",
-            log_loss,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True,
-        )
         return loss
 
     def validation_step(self, batch, batch_index):
@@ -155,7 +145,7 @@ class RiceClassificationModule(pl.LightningModule):
         features = batch["x"]
         targets = batch["y"]
         out = self(features)
-        log_loss = self.logloss(out, targets.squeeze().long())
+        log_loss = self.criterion(out, targets.squeeze().long())
         # self.log(
         #     "val_logloss",
         #     log_loss,
@@ -168,9 +158,9 @@ class RiceClassificationModule(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         # One epoch at a time
-        avg_loss = torch.stack([x["val_logloss"] for x in outputs]).sum() / sum(
-            outputs["cnt"]
-        )
+        avg_loss = torch.stack(
+            [x["val_logloss"] * x["cnt"] for x in outputs]
+        ).sum() / sum([x["cnt"] for x in outputs])
         self.log(
             "val_logloss",
             avg_loss,
