@@ -8,17 +8,15 @@ from torch.utils.data import DataLoader
 
 from model import RiceClassificationCore, RiceClassificationModule
 from data import RiceDataset
-from utils import get_augmentations, get_valid_transforms
+from utils import get_transforms
 from env import *
 
 if __name__ == "__main__":
     core = RiceClassificationCore()
-    model = RiceClassificationModule(
-        hparams={"lr": LR, "batch_size": BATCH_SIZE}, core=core
-    )
+    model = RiceClassificationModule(hparams={}, core=core)
     model = model.to("cuda")
     _ = model.eval()
-    new_state_dict = torch.load("./checkpoints/day2/model_val_logloss=0.18.ckpt")[
+    new_state_dict = torch.load("./checkpoints/day2/model_val_logloss=0.09.ckpt")[
         "state_dict"
     ]
     model.load_state_dict(new_state_dict)
@@ -32,7 +30,7 @@ if __name__ == "__main__":
         TEST_IMAGE_FOLDER,
         test,
         train_mode=False,
-        transforms=get_valid_transforms(),
+        transforms=get_transforms("valid"),
     )
 
     test_dataloader = DataLoader(

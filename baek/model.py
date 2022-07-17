@@ -8,6 +8,7 @@ import pytorch_lightning as pl
 
 from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torch.nn.modules.loss import _WeightedLoss
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from env import *
 
 
@@ -101,7 +102,8 @@ class RiceClassificationModule(pl.LightningModule):
         super().__init__()
         self.hparams.update(hparams)
         self.core = core
-        self.criterion = SmoothCrossEntropyLoss(smoothing=0.1)
+        # self.criterion = SmoothCrossEntropyLoss(smoothing=0.1)
+        self.criterion = nn.CrossEntropyLoss()
         self.logloss = nn.CrossEntropyLoss()
         self.accuracy = torchmetrics.Accuracy()
 
@@ -109,15 +111,22 @@ class RiceClassificationModule(pl.LightningModule):
         return self.core(x)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.core.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.Adam(
+            self.core.parameters(),
+            lr=self.hparams.lr,
+            weight_decay=self.hparams.weight_decay,
+        )
         scheduler = {
-            "scheduler": LinearWarmupCosineAnnealingLR(
+            "scheduler": ReduceLROnPlateau(
                 optimizer,
-                warmup_epochs=5,
-                max_epochs=50,
+                mode="min",
+                factor=0.2,
+                patience=3,
+                verbose=True,
+                eps=1e-6,
             ),
-            "interval": "step",
-            "monitor": "train_loss",
+            "interval": "epoch",
+            "monitor": "val_logloss",
         }
         return [optimizer], [scheduler]
 
@@ -147,14 +156,27 @@ class RiceClassificationModule(pl.LightningModule):
         targets = batch["y"]
         out = self(features)
         log_loss = self.logloss(out, targets.squeeze().long())
+        # self.log(
+        #     "val_logloss",
+        #     log_loss,
+        #     on_step=False,
+        #     on_epoch=True,
+        #     prog_bar=True,
+        #     logger=True,
+        # )
+        return {"val_logloss": log_loss, "cnt": len(targets)}
+
+    def validation_epoch_end(self, outputs):
+        # One epoch at a time
+        avg_loss = torch.stack([x["val_logloss"] for x in outputs]).sum() / sum(
+            outputs["cnt"]
+        )
         self.log(
             "val_logloss",
-            log_loss,
-            on_step=False,
-            on_epoch=True,
+            avg_loss,
             prog_bar=True,
-            logger=True,
         )
+        return {"val_logloss": avg_loss}
 
 
 if __name__ == "__main__":

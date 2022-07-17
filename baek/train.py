@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
-    wandb_logger = WandbLogger(project="MRDC_DAY2", name="Base")
+    wandb_logger = WandbLogger(project="MRDC_DAY2", name="ResNeXt50_1stSolution")
 
     trainer = pl.Trainer(
         logger=wandb_logger,
@@ -41,7 +41,8 @@ if __name__ == "__main__":
     core = RiceClassificationCore()
     dm = RiceDataModule(fold=0)
     model = RiceClassificationModule(
-        hparams={"lr": LR, "batch_size": BATCH_SIZE}, core=core
+        hparams={"lr": LR, "batch_size": BATCH_SIZE, "weight_decay": WEIGHT_DECAY},
+        core=core,
     )
 
     trainer.use_native_amp = False

@@ -9,7 +9,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from torch.utils.data import Dataset, DataLoader
 from env import *
-from utils import get_augmentations, get_train_transforms, get_valid_transforms
+from utils import get_transforms
 
 
 class RiceDataset(Dataset):
@@ -55,10 +55,14 @@ class RiceDataModule(pl.LightningDataModule):
         val_fold = folds.loc[folds["fold"] == self.fold]
 
         self.train_ds = RiceDataset(
-            TRAIN_IMAGE_FOLDER, train_fold, transforms=get_train_transforms()
+            TRAIN_IMAGE_FOLDER,
+            train_fold,
+            transforms=get_transforms("train"),
         )
         self.val_ds = RiceDataset(
-            TRAIN_IMAGE_FOLDER, val_fold, transforms=get_valid_transforms()
+            TRAIN_IMAGE_FOLDER,
+            val_fold,
+            transforms=get_transforms("valid"),
         )
 
     def train_dataloader(self):
