@@ -8,6 +8,7 @@ import timm
 from torch.utils.data import DataLoader
 from scipy.special import softmax
 
+from transformers import ConvNextFeatureExtractor, ConvNextForImageClassification
 from model import RiceClassificationCore, RiceClassificationModule
 from data import RiceDataset, RiceDataModule
 from utils import get_transforms
@@ -19,7 +20,10 @@ TTA = False
 class InferenceCore(nn.Module):
     def __init__(self, model_arch: str):
         super().__init__()
-        self.model = timm.create_model(model_arch, pretrained=True)
+        self.model = ConvNextForImageClassification.from_pretrained(
+            "facebook/convnext-tiny-224"
+        )
+        # self.model = timm.create_model(model_arch, pretrained=True)
         #         self.model = base_model
 
         # MobileNet
@@ -51,8 +55,8 @@ class InferenceCore(nn.Module):
 
 
 if __name__ == "__main__":
-    model_arch_list = ["mobilenetv3_rw"]
-    ckpt_list = ["./checkpoints/day3/model_val_logloss=0.12-v1.ckpt"]
+    model_arch_list = [""]
+    ckpt_list = ["./checkpoints/day3/convnext-tiny-224_val_logloss=0.11.ckpt"]
     weight = [1.0]
     model_list = []
     for model_arch, ckpt in zip(model_arch_list, ckpt_list):
@@ -85,7 +89,11 @@ if __name__ == "__main__":
         model_output = []
         for model, w in zip(model_list, weight):
             model_output.append(
-                model(image["x"].to("cuda")).detach().cpu().numpy().reshape(-1, 3, 1)
+                model(image["x"].to("cuda"))
+                .logits.detach()
+                .cpu()
+                .numpy()
+                .reshape(-1, 3, 1)
                 * w
             )
         model_output = np.concatenate(model_output, axis=-1).sum(axis=-1)
@@ -122,7 +130,11 @@ if __name__ == "__main__":
         model_output = []
         for model, w in zip(model_list, weight):
             model_output.append(
-                model(image["x"].to("cuda")).detach().cpu().numpy().reshape(-1, 3, 1)
+                model(image["x"].to("cuda"))
+                .logits.detach()
+                .cpu()
+                .numpy()
+                .reshape(-1, 3, 1)
                 * w
             )
         model_output = np.concatenate(model_output, axis=-1).sum(axis=-1)

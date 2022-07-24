@@ -1,11 +1,12 @@
 import timm
-
+import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchmetrics
 import pytorch_lightning as pl
 
+from transformers import ConvNextFeatureExtractor, ConvNextForImageClassification
 from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torch.nn.modules.loss import _WeightedLoss
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -71,7 +72,9 @@ class SmoothCrossEntropyLoss(_WeightedLoss):
 class RiceClassificationCore(nn.Module):
     def __init__(self):
         super().__init__()
-        self.model = timm.create_model(MODEL_ARCH, pretrained=True)
+        self.model = ConvNextForImageClassification.from_pretrained(
+            "facebook/convnext-tiny-224"
+        )
         #         self.model = base_model
 
         # MobileNet
@@ -138,7 +141,7 @@ class RiceClassificationModule(pl.LightningModule):
         # One batch at a time
         features = batch["x"]
         targets = batch["y"]
-        out = self(features)
+        out = self(features).logits
         loss = self.criterion(out, targets.squeeze().long())
         # loss = self.criterion(out, F.one_hot(targets.squeeze().long(), 3), 0.8, 1.2)
         # loss = loss.mean()
@@ -160,7 +163,7 @@ class RiceClassificationModule(pl.LightningModule):
         # One batch at a time
         features = batch["x"]
         targets = batch["y"]
-        out = self(features)
+        out = self(features).logits
         log_loss = self.logloss(out, targets.squeeze().long())
         # self.log(
         #     "val_logloss",
