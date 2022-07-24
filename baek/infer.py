@@ -18,7 +18,7 @@ if __name__ == "__main__":
     model = RiceClassificationModule(hparams={}, core=core)
     model = model.to("cuda")
     _ = model.eval()
-    new_state_dict = torch.load("./checkpoints/day2/model_val_logloss=0.11.ckpt")[
+    new_state_dict = torch.load("./checkpoints/day2/model_val_logloss=0.09.ckpt")[
         "state_dict"
     ]
     model.load_state_dict(new_state_dict)
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     if TTA:
         model = tta.ClassificationTTAWrapper(
             model,
-            tta.aliases.flip_transform(),
+            tta.aliases.d4_transform(),
         )
 
     print("== Cross Validation ==")

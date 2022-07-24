@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
-    wandb_logger = WandbLogger(project="MRDC_DAY2", name="ResNeXt50_1stSolution")
+    wandb_logger = WandbLogger(project="MRDC_DAY3", name="ResNeXt50")
 
     trainer = pl.Trainer(
         logger=wandb_logger,
