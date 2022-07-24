@@ -10,6 +10,7 @@ from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torch.nn.modules.loss import _WeightedLoss
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from env import *
+from bi_tempered_loss import bi_tempered_logistic_loss
 
 
 class SymmetricCrossEntropy(nn.Module):
@@ -102,7 +103,6 @@ class RiceClassificationModule(pl.LightningModule):
         super().__init__()
         self.hparams.update(hparams)
         self.core = core
-        # self.criterion = SmoothCrossEntropyLoss(smoothing=0.1)
         self.criterion = nn.CrossEntropyLoss()
         self.logloss = nn.CrossEntropyLoss()
         self.accuracy = torchmetrics.Accuracy()
@@ -135,7 +135,9 @@ class RiceClassificationModule(pl.LightningModule):
         features = batch["x"]
         targets = batch["y"]
         out = self(features)
-        loss = self.criterion(out, targets.squeeze().long())
+        loss = self.criterion(out, targets.squeeze(). long())
+        # loss = self.criterion(out, F.one_hot(targets.squeeze().long(), 3), 0.8, 1.2)
+        # loss = loss.mean()
         self.log(
             "train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
         )

@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     callbacks = []
     checkpoint_callback = ModelCheckpoint(
-        dirpath="checkpoints/day2/",
+        dirpath="checkpoints/day3/",
         filename="model_{val_logloss:.2f}",
         monitor="val_logloss",
         verbose=True,
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
-    wandb_logger = WandbLogger(project="MRDC_DAY3", name="ResNeXt50")
+    wandb_logger = WandbLogger(project="MRDC_DAY3", name="ResNeXt50d")
 
     trainer = pl.Trainer(
         logger=wandb_logger,

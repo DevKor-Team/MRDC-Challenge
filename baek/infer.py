@@ -11,14 +11,14 @@ from data import RiceDataset, RiceDataModule
 from utils import get_transforms
 from env import *
 
-TTA = True
+TTA = False
 
 if __name__ == "__main__":
     core = RiceClassificationCore()
     model = RiceClassificationModule(hparams={}, core=core)
     model = model.to("cuda")
     _ = model.eval()
-    new_state_dict = torch.load("./checkpoints/day2/model_val_logloss=0.09.ckpt")[
+    new_state_dict = torch.load("./checkpoints/day3/model_val_logloss=0.10.ckpt")[
         "state_dict"
     ]
     model.load_state_dict(new_state_dict)
