@@ -126,6 +126,7 @@ if __name__ == "__main__":
                 * w
             )
         result.append(softmax(model_output, axis=1))
+        model_output = np.concatenate(model_output, axis=-1).sum(axis=-1)
     y_pred = np.concatenate(result)
     print(y_pred.shape)
     submission = pd.read_csv("/ssd/MRDC/SampleSubmission.csv")
