@@ -135,7 +135,7 @@ class RiceClassificationModule(pl.LightningModule):
         features = batch["x"]
         targets = batch["y"]
         out = self(features)
-        loss = self.criterion(out, targets.squeeze(). long())
+        loss = self.criterion(out, targets.squeeze().long())
         # loss = self.criterion(out, F.one_hot(targets.squeeze().long(), 3), 0.8, 1.2)
         # loss = loss.mean()
         self.log(
