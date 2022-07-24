@@ -22,13 +22,17 @@ class InferenceCore(nn.Module):
         self.model = timm.create_model(model_arch, pretrained=True)
         #         self.model = base_model
 
-        #         Efficientnets
-        # n_features = self.model.classifier.in_features
-        # self.model.classifier = nn.Linear(n_features, CLASSES)
+        # MobileNet
+        n_features = self.model.classifier.in_features
+        self.model.classifier = nn.Linear(n_features, CLASSES)
 
         #         Resnets
-        n_features = self.model.fc.in_features
-        self.model.fc = nn.Linear(n_features, CLASSES)
+        # n_features = self.model.fc.in_features
+        # self.model.fc = nn.Linear(n_features, CLASSES)
+
+        # ViT
+        # n_features = self.model.head.in_features
+        # self.model.head = nn.Linear(n_features, CLASSES)
 
         self._freeze_batchnorm()  # NEW NEW NEW NEW NEW NEW NEW NEW NEW
 
@@ -47,12 +51,9 @@ class InferenceCore(nn.Module):
 
 
 if __name__ == "__main__":
-    model_arch_list = ["resnext50d_32x4d", "resnext50_32x4d"]
-    ckpt_list = [
-        "./checkpoints/day3/model_val_logloss=0.10.ckpt",
-        "./checkpoints/day2/model_val_logloss=0.09.ckpt",
-    ]
-    weight = [0.7, 0.3]
+    model_arch_list = ["mobilenetv3_rw"]
+    ckpt_list = ["./checkpoints/day3/model_val_logloss=0.12-v1.ckpt"]
+    weight = [1.0]
     model_list = []
     for model_arch, ckpt in zip(model_arch_list, ckpt_list):
         core = InferenceCore(model_arch)
@@ -62,7 +63,6 @@ if __name__ == "__main__":
         new_state_dict = torch.load(ckpt)["state_dict"]
         model.load_state_dict(new_state_dict)
         model_list.append(model)
-    m = nn.Softmax(dim=1)
 
     # if TTA:
     #     model = tta.ClassificationTTAWrapper(
@@ -125,8 +125,9 @@ if __name__ == "__main__":
                 model(image["x"].to("cuda")).detach().cpu().numpy().reshape(-1, 3, 1)
                 * w
             )
-        result.append(softmax(model_output, axis=1))
         model_output = np.concatenate(model_output, axis=-1).sum(axis=-1)
+        result.append(softmax(model_output, axis=1))
+
     y_pred = np.concatenate(result)
     print(y_pred.shape)
     submission = pd.read_csv("/ssd/MRDC/SampleSubmission.csv")

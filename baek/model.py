@@ -74,13 +74,17 @@ class RiceClassificationCore(nn.Module):
         self.model = timm.create_model(MODEL_ARCH, pretrained=True)
         #         self.model = base_model
 
-        #         Efficientnets
-        # n_features = self.model.classifier.in_features
-        # self.model.classifier = nn.Linear(n_features, CLASSES)
+        # MobileNet
+        n_features = self.model.classifier.in_features
+        self.model.classifier = nn.Linear(n_features, CLASSES)
 
         #         Resnets
-        n_features = self.model.fc.in_features
-        self.model.fc = nn.Linear(n_features, CLASSES)
+        # n_features = self.model.fc.in_features
+        # self.model.fc = nn.Linear(n_features, CLASSES)
+
+        # ViT
+        # n_features = self.model.head.in_features
+        # self.model.head = nn.Linear(n_features, CLASSES)
 
         self._freeze_batchnorm()  # NEW NEW NEW NEW NEW NEW NEW NEW NEW
 
