@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     callbacks = []
     checkpoint_callback = ModelCheckpoint(
-        dirpath="checkpoints/day3/",
+        dirpath="checkpoints/day4/",
         filename=MODEL_ARCH + "_{val_logloss:.2f}",
         monitor="val_logloss",
         verbose=True,
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
-    wandb_logger = WandbLogger(project="MRDC_DAY3", name="ConvNeXt-Tiny-224")
+    wandb_logger = WandbLogger(project="MRDC_DAY4", name="ConvNeXt-Base-384")
 
     trainer = pl.Trainer(
         logger=wandb_logger,

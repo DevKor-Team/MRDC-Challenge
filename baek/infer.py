@@ -21,7 +21,7 @@ class InferenceCore(nn.Module):
     def __init__(self, model_arch: str):
         super().__init__()
         self.model = ConvNextForImageClassification.from_pretrained(
-            "facebook/convnext-tiny-224"
+            "facebook/convnext-base-384-22k-1k"
         )
         # self.model = timm.create_model(model_arch, pretrained=True)
         #         self.model = base_model
@@ -56,7 +56,7 @@ class InferenceCore(nn.Module):
 
 if __name__ == "__main__":
     model_arch_list = [""]
-    ckpt_list = ["./checkpoints/day3/convnext-tiny-224_val_logloss=0.11.ckpt"]
+    ckpt_list = ["./checkpoints/day4/convnext-tiny-224_val_logloss=0.09.ckpt"]
     weight = [1.0]
     model_list = []
     for model_arch, ckpt in zip(model_arch_list, ckpt_list):
