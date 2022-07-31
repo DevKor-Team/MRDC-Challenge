@@ -12,6 +12,7 @@ from utils import seed_everything
 if __name__ == "__main__":
     seed_everything(42)
 
+    MODEL_ARCH = "convnext-base-384-22k-1k"
     callbacks = []
     checkpoint_callback = ModelCheckpoint(
         dirpath="checkpoints/day4/",
@@ -28,7 +29,7 @@ if __name__ == "__main__":
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
-    wandb_logger = WandbLogger(project="MRDC_DAY4", name="ConvNeXt-Base-384")
+    wandb_logger = WandbLogger(project="MRDC_DAY4", name=MODEL_ARCH + "_4")
 
     trainer = pl.Trainer(
         logger=wandb_logger,
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     )
 
     core = RiceClassificationCore()
-    dm = RiceDataModule(fold=0)
+    dm = RiceDataModule(fold=4)
     model = RiceClassificationModule(
         hparams={"lr": LR, "batch_size": BATCH_SIZE, "weight_decay": WEIGHT_DECAY},
         core=core,

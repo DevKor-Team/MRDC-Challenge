@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torchmetrics
 import pytorch_lightning as pl
 
-from transformers import ConvNextFeatureExtractor, ConvNextForImageClassification
+from transformers import ConvNextForImageClassification
 from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torch.nn.modules.loss import _WeightedLoss
 from torch.optim.lr_scheduler import ReduceLROnPlateau

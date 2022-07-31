@@ -8,6 +8,7 @@ import timm
 from torch.utils.data import DataLoader
 from scipy.special import softmax
 
+from sklearn.metrics import log_loss
 from transformers import ConvNextFeatureExtractor, ConvNextForImageClassification
 from model import RiceClassificationCore, RiceClassificationModule
 from data import RiceDataset, RiceDataModule
@@ -55,8 +56,9 @@ class InferenceCore(nn.Module):
 
 
 if __name__ == "__main__":
+    FOLD = 4
     model_arch_list = [""]
-    ckpt_list = ["./checkpoints/day4/convnext-tiny-224_val_logloss=0.09.ckpt"]
+    ckpt_list = ["./checkpoints/day4/convnext-base-384-22k-1k_val_logloss=0.08-v1.ckpt"]
     weight = [1.0]
     model_list = []
     for model_arch, ckpt in zip(model_arch_list, ckpt_list):
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     #     )
 
     print("== Cross Validation ==")
-    dm = RiceDataModule(fold=0)
+    dm = RiceDataModule(fold=FOLD)
     dm.setup()
     valid_loader = DataLoader(
         dm.val_ds,
@@ -103,13 +105,25 @@ if __name__ == "__main__":
     y = np.concatenate(y)
     loss = nn.CrossEntropyLoss()
 
+    error = pd.DataFrame(
+        data=softmax(y_pred, axis=1), columns=["blast", "brown", "healthy"]
+    )
+    error.loc[:, "answer"] = y
+    loss_list = []
+    for y_true, y_pred_ in zip(
+        np.eye(3)[error["answer"].astype(int)],
+        error.drop(columns=["answer"]).to_numpy(),
+    ):
+        loss_list.append(log_loss(y_true, y_pred_))
+    error.loc[:, "loss"] = loss_list
+    print(error.groupby(["answer"])["loss"].describe())
+
     CV = loss(torch.FloatTensor(y_pred), torch.LongTensor(y).squeeze().long()).item()
     print(f"CV Score = {CV:.4f}")
     y_pred = np.argmax(y_pred, axis=-1)
     from sklearn.metrics import classification_report
 
     print(classification_report(y, y_pred, target_names=["blast", "brown", "healthy"]))
-
     test = pd.read_csv("/ssd/MRDC/test_rgb.csv")
     test_dataset = RiceDataset(
         TEST_IMAGE_FOLDER,
@@ -144,4 +158,4 @@ if __name__ == "__main__":
     print(y_pred.shape)
     submission = pd.read_csv("/ssd/MRDC/SampleSubmission.csv")
     submission.loc[:, ["blast", "brown", "healthy"]] = y_pred
-    submission.to_csv("submission.csv", index=False)
+    submission.to_csv(f"submission_{FOLD}.csv", index=False)
