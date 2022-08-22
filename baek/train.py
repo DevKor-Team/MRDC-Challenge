@@ -12,10 +12,10 @@ from utils import seed_everything
 if __name__ == "__main__":
     seed_everything(42)
 
-    MODEL_ARCH = "convnext-base-384-22k-1k"
+    MODEL_ARCH = "convnext-large-384-22k-1k"
     callbacks = []
     checkpoint_callback = ModelCheckpoint(
-        dirpath="checkpoints/day4/",
+        dirpath="checkpoints/day5/",
         filename=MODEL_ARCH + "_{val_logloss:.2f}",
         monitor="val_logloss",
         verbose=True,
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
-    wandb_logger = WandbLogger(project="MRDC_DAY4", name=MODEL_ARCH + "_4")
+    wandb_logger = WandbLogger(project="MRDC_DAY5", name=MODEL_ARCH + "_4")
 
     trainer = pl.Trainer(
         logger=wandb_logger,

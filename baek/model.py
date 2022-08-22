@@ -73,7 +73,7 @@ class RiceClassificationCore(nn.Module):
     def __init__(self):
         super().__init__()
         self.model = ConvNextForImageClassification.from_pretrained(
-            "facebook/convnext-base-384-22k-1k"
+            "facebook/convnext-large-384-22k-1k"
         )
         #         self.model = base_model
 
