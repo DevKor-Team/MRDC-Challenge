@@ -1,12 +1,17 @@
 import timm
-
+import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchmetrics
 import pytorch_lightning as pl
+
+from transformers import ConvNextForImageClassification
+from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torch.nn.modules.loss import _WeightedLoss
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from env import *
+from bi_tempered_loss import bi_tempered_logistic_loss
 
 
 class SymmetricCrossEntropy(nn.Module):
@@ -67,16 +72,23 @@ class SmoothCrossEntropyLoss(_WeightedLoss):
 class RiceClassificationCore(nn.Module):
     def __init__(self):
         super().__init__()
-        self.model = timm.create_model(MODEL_ARCH, pretrained=True)
+        self.model = ConvNextForImageClassification.from_pretrained(
+            "facebook/convnext-large-384-22k-1k"
+        )
         #         self.model = base_model
 
-        #         Efficientnets
-        # n_features = self.model.classifier.in_features
-        # self.model.classifier = nn.Linear(n_features, CLASSES)
+        # MobileNet
+        n_features = self.model.classifier.in_features
+        self.model.classifier = nn.Linear(n_features, CLASSES)
 
         #         Resnets
-        n_features = self.model.fc.in_features
-        self.model.fc = nn.Linear(n_features, CLASSES)
+        # n_features = self.model.fc.in_features
+        # self.model.fc = nn.Linear(n_features, CLASSES)
+
+        # ViT
+        # n_features = self.model.head.in_features
+        # self.model.head = nn.Linear(n_features, CLASSES)
+
 
         self._freeze_batchnorm()  # NEW NEW NEW NEW NEW NEW NEW NEW NEW
 
@@ -99,20 +111,32 @@ class RiceClassificationModule(pl.LightningModule):
         super().__init__()
         self.hparams.update(hparams)
         self.core = core
-        self.criterion = SmoothCrossEntropyLoss(smoothing=0.1)
+        self.criterion = nn.CrossEntropyLoss()
+        self.logloss = nn.CrossEntropyLoss()
+
         self.accuracy = torchmetrics.Accuracy()
 
     def forward(self, x):
         return self.core(x)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.core.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.Adam(
+            self.core.parameters(),
+            lr=self.hparams.lr,
+            weight_decay=self.hparams.weight_decay,
+        )
         scheduler = {
-            "scheduler": torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-                optimizer, 15, verbose=False
+            "scheduler": ReduceLROnPlateau(
+                optimizer,
+                mode="min",
+                factor=0.2,
+                patience=3,
+                verbose=True,
+                eps=1e-6,
             ),
-            "interval": "step",
-            "monitor": "train_loss",
+            "interval": "epoch",
+            "monitor": "val_logloss",
+
         }
         return [optimizer], [scheduler]
 
@@ -120,15 +144,17 @@ class RiceClassificationModule(pl.LightningModule):
         # One batch at a time
         features = batch["x"]
         targets = batch["y"]
-        out = self(features)
+        out = self(features).logits
         loss = self.criterion(out, targets.squeeze().long())
+        # loss = self.criterion(out, F.one_hot(targets.squeeze().long(), 3), 0.8, 1.2)
+        # loss = loss.mean()
         self.log(
             "train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
         )
-        metric_acc = self.accuracy(out, targets.squeeze().long())
+        log_loss = self.logloss(out, targets.squeeze().long())
         self.log(
-            "train_accuracy",
-            metric_acc,
+            "train_logloss",
+            log_loss,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
@@ -140,20 +166,30 @@ class RiceClassificationModule(pl.LightningModule):
         # One batch at a time
         features = batch["x"]
         targets = batch["y"]
-        out = self(features)
-        loss = self.criterion(out, targets.squeeze().long())
+        out = self(features).logits
+        log_loss = self.logloss(out, targets.squeeze().long())
+        # self.log(
+        #     "val_logloss",
+        #     log_loss,
+        #     on_step=False,
+        #     on_epoch=True,
+        #     prog_bar=True,
+        #     logger=True,
+        # )
+        return {"val_logloss": log_loss, "cnt": len(targets)}
+
+    def validation_epoch_end(self, outputs):
+        # One epoch at a time
+        # avg_loss = torch.stack([x["val_logloss"] for x in outputs]).sum() / sum(
+        #     outputs["cnt"]
+        # )
+        avg_loss = torch.stack([x["val_logloss"] for x in outputs]).mean()
         self.log(
-            "val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
-        )
-        metric_acc = self.accuracy(out, targets.squeeze().long())
-        self.log(
-            "val_accuracy",
-            metric_acc,
-            on_step=False,
-            on_epoch=True,
+            "val_logloss",
+            avg_loss,
             prog_bar=True,
-            logger=True,
         )
+        return {"val_logloss": avg_loss}
 
 
 if __name__ == "__main__":

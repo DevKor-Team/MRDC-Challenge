@@ -12,11 +12,12 @@ from utils import seed_everything
 if __name__ == "__main__":
     seed_everything(42)
 
+    MODEL_ARCH = "convnext-large-384-22k-1k"
     callbacks = []
     checkpoint_callback = ModelCheckpoint(
-        dirpath="checkpoints/",
-        filename="model_{val_loss:.2f}",
-        monitor="val_loss",
+        dirpath="checkpoints/day5/",
+        filename=MODEL_ARCH + "_{val_logloss:.2f}",
+        monitor="val_logloss",
         verbose=True,
         save_last=False,
         save_top_k=1,
@@ -24,11 +25,11 @@ if __name__ == "__main__":
     )
     callbacks.append(checkpoint_callback)
 
-    early_stopping = EarlyStopping("val_loss", patience=5, verbose=True, mode="min")
+    early_stopping = EarlyStopping("val_logloss", patience=10, verbose=True, mode="min")
     if EARLY_STOPPING == True:
         callbacks.append(early_stopping)
 
-    wandb_logger = WandbLogger(project="MRDC", name="ResNet-DA")
+    wandb_logger = WandbLogger(project="MRDC_DAY5", name=MODEL_ARCH + "_4")
 
     trainer = pl.Trainer(
         logger=wandb_logger,
@@ -39,9 +40,10 @@ if __name__ == "__main__":
     )
 
     core = RiceClassificationCore()
-    dm = RiceDataModule(fold=0)
+    dm = RiceDataModule(fold=4)
     model = RiceClassificationModule(
-        hparams={"lr": LR, "batch_size": BATCH_SIZE}, core=core
+        hparams={"lr": LR, "batch_size": BATCH_SIZE, "weight_decay": WEIGHT_DECAY},
+        core=core,
     )
 
     trainer.use_native_amp = False
