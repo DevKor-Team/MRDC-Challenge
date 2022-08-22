@@ -89,6 +89,7 @@ class RiceClassificationCore(nn.Module):
         # n_features = self.model.head.in_features
         # self.model.head = nn.Linear(n_features, CLASSES)
 
+
         self._freeze_batchnorm()  # NEW NEW NEW NEW NEW NEW NEW NEW NEW
 
     def _freeze_batchnorm(self):
@@ -112,6 +113,7 @@ class RiceClassificationModule(pl.LightningModule):
         self.core = core
         self.criterion = nn.CrossEntropyLoss()
         self.logloss = nn.CrossEntropyLoss()
+
         self.accuracy = torchmetrics.Accuracy()
 
     def forward(self, x):
@@ -134,6 +136,7 @@ class RiceClassificationModule(pl.LightningModule):
             ),
             "interval": "epoch",
             "monitor": "val_logloss",
+
         }
         return [optimizer], [scheduler]
 

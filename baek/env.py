@@ -1,3 +1,4 @@
+
 IMG_SIZE = 384
 TRAIN_IMAGE_FOLDER = "/ssd/MRDC/Images/train/rgb"
 TEST_IMAGE_FOLDER = "/ssd/MRDC/Images/test"
